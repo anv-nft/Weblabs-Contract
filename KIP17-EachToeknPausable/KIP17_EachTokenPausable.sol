@@ -1,6 +1,6 @@
 pragma solidity 0.5.6;
 import "https://github.com/klaytn/klaytn-contracts-old/blob/e9a9b03be3543749db1d759c17462d9c8ace4c3b/contracts/token/KIP17/KIP17Token.sol";
-import "https://github.com/klaytn/klaytn-contracts-old/blob/e9a9b03be3543749db1d759c17462d9c8ace4c3b/contracts/token/KIP17/IKIP17.sol";
+import "https://github.com/klaytn/klaytn-contracts-old/blob/master/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 
@@ -15,6 +15,12 @@ contract tokenPausable is PauserRole, KIP17Metadata{
      */
     event Unpaused(address account, uint256 tokenId);
 
+
+    event AllPaused(bool allPaused);
+
+    event AllUnpaused(bool allPaused);
+
+    bool _allPaused;
     mapping (uint256 => bool) _paused;
     mapping (uint256 => string) URIBeforePaused;
 
@@ -32,11 +38,15 @@ contract tokenPausable is PauserRole, KIP17Metadata{
         return _paused[tokenId];
     }
 
+    function allPaused() public view returns (bool) {
+        return _allPaused;
+    }
+
     /**
      * @dev Modifier to make a function callable only when the contract is not paused.
      */
     modifier whenNotPaused(uint256 tokenId) {
-        require(!_paused[tokenId], "Pausable: paused");
+        require(!_paused[tokenId], "Pausable: Token was paused");
         _;
     }
 
@@ -44,7 +54,20 @@ contract tokenPausable is PauserRole, KIP17Metadata{
      * @dev Modifier to make a function callable only when the contract is paused.
      */
     modifier whenPaused(uint256 tokenId) {
-        require(_paused[tokenId], "Pausable: not paused");
+        require(_paused[tokenId], "Pausable: Token was not paused");
+        _;
+    }
+
+    modifier whenNotAllPaused() {
+        require(!_allPaused, "Pausable: Contract was paused");
+        _;
+    }
+
+    /**
+     * @dev Modifier to make a function callable only when the contract is paused.
+     */
+    modifier whenAllPaused() {
+        require(_allPaused, "Pausable: Contract was not paused");
         _;
     }
 
@@ -52,8 +75,6 @@ contract tokenPausable is PauserRole, KIP17Metadata{
      * @dev Called by a pauser to pause, triggers stopped state.
      */
     function pause(uint256 tokenId) public onlyPauser whenNotPaused(tokenId) {
-
-        // require(tokenURIs[tokenId] == "Paused");
         _paused[tokenId] = true;
         emit Paused(msg.sender, tokenId);
     }
@@ -64,6 +85,19 @@ contract tokenPausable is PauserRole, KIP17Metadata{
     function unpause(uint256 tokenId) public onlyPauser whenPaused(tokenId) {
         _paused[tokenId] = false;
         emit Unpaused(msg.sender, tokenId);
+    }
+
+    function allPause() public onlyPauser whenNotAllPaused {
+        _allPaused = true;
+        emit AllPaused(_allPaused);
+    }
+
+    /**
+     * @dev Called by a pauser to unpause, returns to normal state.
+     */
+    function allUnpause() public onlyPauser whenAllPaused {
+        _allPaused = false;
+        emit AllUnpaused(_allPaused);
     }
 }
 
@@ -86,7 +120,7 @@ contract KIP17TokenPasuable is KIP13, KIP17, tokenPausable {
     constructor() public {
     }
 
-    function approve(address to, uint256 tokenId) public whenNotPaused(tokenId) {
+    function approve(address to, uint256 tokenId) public whenNotAllPaused whenNotPaused(tokenId) {
         super.approve(to, tokenId);
     }
 
@@ -95,13 +129,13 @@ contract KIP17TokenPasuable is KIP13, KIP17, tokenPausable {
         address from,
         address to,
         uint256 tokenId
-    ) public whenNotPaused(tokenId) {
+    ) public whenNotAllPaused whenNotPaused(tokenId) {
         super.transferFrom(from, to, tokenId);
     }
 }
 
 
-contract MyKIP17Token is KIP17Full, KIP17Mintable, KIP17MetadataMintable, KIP17Burnable, KIP17TokenPasuable {
+contract MyKIP17Token is KIP17Full, KIP17Mintable, KIP17MetadataMintable, KIP17Burnable, KIP17TokenPasuable, Ownable {
     constructor (string memory name, string memory symbol) public KIP17Full(name, symbol) {
     }
 }
