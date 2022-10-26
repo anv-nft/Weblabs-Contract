@@ -10,7 +10,7 @@ import "./data.sol";
 contract Breeder is Ownable{
 
     enum LarvaType{Red, Yellow, Brown, Black, Pink, Rainbow, Violet, Cocoa, Mayfly}
-    enum legendaryType{Normal, Legendary}
+    enum legendaryType{Common, Legendary}
     struct info{
         string baseURI;
         address child;
@@ -19,12 +19,13 @@ contract Breeder is Ownable{
         address parentDataContract;
         address childDataContract;        
         address tokenAddress;
+        uint256 breedingFee;
     }
     mapping(address => info) public parent;
     
     // 리빌 세팅 여부, 리빌 여부 알림
     event Setted (address beforeAddress, address afterAddress);
-    event Breeded (address tokenOwner, uint256 tokenId, legendaryType breedingType);
+    event Breeded (address tokenOwner, uint256 tokenId, baby.legendaryType breedingType);
 
     modifier sameTypeChecker(address _parent, uint256 parent1TokenId, uint256 parent2TokenId){
         require(Parent(parent[_parent].parentDataContract).getValue(parent1TokenId) != Parent(parent[_parent].parentDataContract).getValue(parent2TokenId), "Can not breed with those same types");
@@ -69,21 +70,33 @@ contract Breeder is Ownable{
         parent[_parent].baseCoolTime = _cooltime;
     }
     
-    function legendaryChacker(address _parent, uint256 parent1TokenId, uint256 parent2TokenId, uint256 _specialCount) private view returns (legendaryType) {
+    function setBreedingFee(address _parent, uint256 _breedingFee) public onlyOwner{
+        if (_breedingFee <= 10**18) {
+            parent[_parent].breedingFee = _breedingFee * 10 ** 18;
+        } else{
+            parent[_parent].breedingFee = _breedingFee;
+
+        }
+    }
+
+    function reddem(address _parent) public payable onlyOwner{
+        IKIP7(parent[_parent].tokenAddress).transfer(msg.sender, IKIP7(parent[_parent].tokenAddress).balanceOf(address(this)));
+    }
+
+    function legendaryChacker(address _parent, uint256 parent1TokenId, uint256 parent2TokenId) private view returns (baby.legendaryType) {
         
         info storage parentInfo = parent[_parent];
         address parentDataContract = parentInfo.parentDataContract;
         LarvaType token1LarvaType = LarvaType(Parent(parentDataContract).getValue(parent1TokenId));
         LarvaType token2LarvaType = LarvaType(Parent(parentDataContract).getValue(parent2TokenId));
 
-        if (
-            (_specialCount < 200) &&
+        if ((baby(parentInfo.childDataContract).getAmount(baby.legendaryType.Legendary) < 200) &&
             (token1LarvaType == LarvaType.Brown || token1LarvaType == LarvaType.Pink) &&
-            (token2LarvaType == LarvaType.Brown || token2LarvaType == LarvaType.Pink) &&
-            (parentInfo.coolTime[parent1TokenId] <= block.number && parentInfo.coolTime[parent2TokenId] <= block.number)) {
-                return legendaryType.Legendary;
+            (token2LarvaType == LarvaType.Brown || token2LarvaType == LarvaType.Pink)) {
+                require((parentInfo.coolTime[parent1TokenId] <= block.number && parentInfo.coolTime[parent2TokenId] <= block.number), "Cooltime Error!");
+                return baby.legendaryType.Legendary;
         } else {
-            return legendaryType.Normal;
+            return baby.legendaryType.Common;
         }
     }
 
@@ -92,20 +105,20 @@ contract Breeder is Ownable{
     payable
     sameTypeChecker(_parent, parent1TokenId, parent2TokenId) 
     tokenOwnerChecker(_parent, parent1TokenId, parent2TokenId)
-    returns (address, uint256, legendaryType) {
+    returns (address, uint256, baby.legendaryType) {
         info storage parentInfo = parent[_parent];
-        require(IKIP7(parentInfo.tokenAddress).allowance(msg.sender, address(this)) >= 2000*10**18);
+        require(IKIP7(parentInfo.tokenAddress).allowance(msg.sender, address(this)) >= parentInfo.breedingFee);
         require(baby(parentInfo.childDataContract).getTotalAmount() < 2000, "All Token was breeded");
 
-        legendaryType breedingType;
-        breedingType = legendaryChacker(_parent, parent1TokenId, parent2TokenId, baby(parentInfo.childDataContract).getAmount(1));
-        if (breedingType == legendaryType.Legendary){
+        baby.legendaryType breedingType;
+        breedingType = legendaryChacker(_parent, parent1TokenId, parent2TokenId);
+        if (breedingType == baby.legendaryType.Legendary){
             parentInfo.coolTime[parent1TokenId] = block.number + parentInfo.baseCoolTime;
             parentInfo.coolTime[parent2TokenId] = block.number + parentInfo.baseCoolTime;
         }
 
-        uint256 tokenId = baby(parentInfo.childDataContract).Breeding(uint8(breedingType));
-        IKIP7(parentInfo.tokenAddress).transferFrom(msg.sender, address(this), 2000 * 10 ** 18);
+        uint256 tokenId = baby(parentInfo.childDataContract).Breeding(breedingType);
+        IKIP7(parentInfo.tokenAddress).transferFrom(msg.sender, address(this), parentInfo.breedingFee);
         IKIP17MetadataMintable(parentInfo.child).mintWithTokenURI(msg.sender, tokenId, string(abi.encodePacked(parentInfo.baseURI, Strings.toString(tokenId), ".json")));
         emit Breeded(msg.sender, tokenId, breedingType);
         return (msg.sender, tokenId, breedingType);
