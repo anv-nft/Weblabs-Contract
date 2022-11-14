@@ -1,5 +1,11 @@
 pragma solidity ^0.8.7;
 
+// import "https://github.com/klaytn/klaytn-contracts/blob/master/contracts/KIP/token/KIP17/extensions/IKIP17Burnable.sol";
+// import "https://github.com/klaytn/klaytn-contracts/blob/master/contracts/KIP/token/KIP17/extensions/IKIP17MetadataMintable.sol";
+// import "https://github.com/klaytn/klaytn-contracts/blob/master/contracts/KIP/token/KIP17/IKIP17.sol";
+// import "https://github.com/klaytn/klaytn-contracts/blob/master/contracts/access/Ownable.sol";
+// import "https://github.com/klaytn/klaytn-contracts/blob/master/contracts/utils/Strings.sol";
+
 import "https://github.com/klaytn/klaytn-contracts/blob/master/contracts/KIP/token/KIP7/IKIP7.sol";
 import "https://github.com/klaytn/klaytn-contracts/blob/master/contracts/KIP/token/KIP17/extensions/IKIP17MetadataMintable.sol";
 import "https://github.com/klaytn/klaytn-contracts/blob/master/contracts/KIP/token/KIP17/IKIP17.sol";
@@ -10,7 +16,7 @@ import "./data.sol";
 contract Breeder is Ownable{
 
     enum LarvaType{Red, Yellow, Brown, Black, Pink, Rainbow, Violet, Cocoa, Mayfly}
-    enum legendaryType{Common, Legendary}
+    enum breedingType{Normal, Legendary}
     struct info{
         string baseURI;
         address child;
@@ -25,7 +31,7 @@ contract Breeder is Ownable{
     
     // 리빌 세팅 여부, 리빌 여부 알림
     event Setted (address beforeAddress, address afterAddress);
-    event Breeded (address tokenOwner, uint256 tokenId, baby.legendaryType breedingType);
+    event Breeded (address tokenOwner, uint256 tokenId, baby.legendaryType _breedingType);
 
     modifier sameTypeChecker(address _parent, uint256 parent1TokenId, uint256 parent2TokenId){
         require(Parent(parent[_parent].parentDataContract).getValue(parent1TokenId) != Parent(parent[_parent].parentDataContract).getValue(parent2TokenId), "Can not breed with those same types");
@@ -36,6 +42,7 @@ contract Breeder is Ownable{
         require(IKIP17(_parent).ownerOf(parent1) == msg.sender && IKIP17(_parent).ownerOf(parent2) == msg.sender, "This token is not yours");
         _;
     }
+
     function setDataContract(address _parent, address _parentDataContract, address _childDataContract) public onlyOwner{
         info storage parentInfo = parent[_parent];
 
@@ -80,7 +87,9 @@ contract Breeder is Ownable{
     }
 
     function reddem(address _parent) public payable onlyOwner{
-        IKIP7(parent[_parent].tokenAddress).transfer(msg.sender, IKIP7(parent[_parent].tokenAddress).balanceOf(address(this)));
+        IKIP7(parent[_parent].tokenAddress).transfer(
+            msg.sender, 
+            IKIP7(parent[_parent].tokenAddress).balanceOf(address(this)));
     }
 
     function legendaryChacker(address _parent, uint256 parent1TokenId, uint256 parent2TokenId) private view returns (baby.legendaryType) {
@@ -90,16 +99,17 @@ contract Breeder is Ownable{
         LarvaType token1LarvaType = LarvaType(Parent(parentDataContract).getValue(parent1TokenId));
         LarvaType token2LarvaType = LarvaType(Parent(parentDataContract).getValue(parent2TokenId));
 
-        if ((baby(parentInfo.childDataContract).getAmount(baby.legendaryType.Legendary) < 200) &&
+        if ((baby(parentInfo.childDataContract).getAmount(baby.legendaryType.Legendary) < baby(parentInfo.childDataContract).getLength(baby.legendaryType.Legendary)) &&
             (token1LarvaType == LarvaType.Brown || token1LarvaType == LarvaType.Pink) &&
             (token2LarvaType == LarvaType.Brown || token2LarvaType == LarvaType.Pink)) {
                 require((parentInfo.coolTime[parent1TokenId] <= block.number && parentInfo.coolTime[parent2TokenId] <= block.number), "Cooltime Error!");
+               
                 return baby.legendaryType.Legendary;
         } else {
             return baby.legendaryType.Common;
         }
     }
-
+    
     function breeding(address _parent, uint256 parent1TokenId, uint256 parent2TokenId) 
     public
     payable
@@ -107,23 +117,30 @@ contract Breeder is Ownable{
     tokenOwnerChecker(_parent, parent1TokenId, parent2TokenId)
     returns (address, uint256, baby.legendaryType) {
         info storage parentInfo = parent[_parent];
-        require(IKIP7(parentInfo.tokenAddress).allowance(msg.sender, address(this)) >= parentInfo.breedingFee);
-        require(baby(parentInfo.childDataContract).getTotalAmount() < 2000, "All Token was breeded");
+        require(IKIP7(parentInfo.tokenAddress).allowance(msg.sender, address(this)) >= parentInfo.breedingFee, "KIP7777");
+        require(baby(parentInfo.childDataContract).getTotalAmount() < baby(parentInfo.childDataContract).getLength(baby.legendaryType.Legendary) + baby(parentInfo.childDataContract).getLength(baby.legendaryType.Common), "All Token was breeded");
 
-        baby.legendaryType breedingType;
-        breedingType = legendaryChacker(_parent, parent1TokenId, parent2TokenId);
-        if (breedingType == baby.legendaryType.Legendary){
-            parentInfo.coolTime[parent1TokenId] = block.number + parentInfo.baseCoolTime;
-            parentInfo.coolTime[parent2TokenId] = block.number + parentInfo.baseCoolTime;
-        }
+        baby.legendaryType _breedingType;
+        _breedingType = legendaryChacker(_parent, parent1TokenId, parent2TokenId);
 
-        uint256 tokenId = baby(parentInfo.childDataContract).Breeding(breedingType);
+        uint256 tokenId = baby(parentInfo.childDataContract).Breeding(_breedingType);
         IKIP7(parentInfo.tokenAddress).transferFrom(msg.sender, address(this), parentInfo.breedingFee);
         IKIP17MetadataMintable(parentInfo.child).mintWithTokenURI(msg.sender, tokenId, string(abi.encodePacked(parentInfo.baseURI, Strings.toString(tokenId), ".json")));
-        emit Breeded(msg.sender, tokenId, breedingType);
-        return (msg.sender, tokenId, breedingType);
+        if (_breedingType == baby.legendaryType.Legendary){
+            giveCooltime(_parent, parent1TokenId);
+            giveCooltime(_parent, parent2TokenId);
+        }
+        
+        emit Breeded(msg.sender, tokenId, _breedingType);
+        return (msg.sender, tokenId, _breedingType);
     }
 
+    function giveCooltime(address _parent, uint256 tokenId) private {
+        parent[_parent].coolTime[tokenId] = block.number + parent[_parent].baseCoolTime;
+    }
+    // function getFee(address _parent) public view returns(uin256){
+    //     return parent[_parent].
+    // }
     function getCoolTime(address _parent, uint256 tokenId) public view returns(uint256) {
         if (parent[_parent].coolTime[tokenId] >= block.number) {
             return (parent[_parent].coolTime[tokenId] - block.number);
