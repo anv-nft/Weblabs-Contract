@@ -1,7 +1,6 @@
 pragma solidity 0.5.6;
 import "https://github.com/klaytn/klaytn-contracts-old/blob/e9a9b03be3543749db1d759c17462d9c8ace4c3b/contracts/token/KIP17/KIP17Token.sol";
 import "https://github.com/klaytn/klaytn-contracts-old/blob/master/contracts/ownership/Ownable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 
 contract tokenPausable is PauserRole, KIP17Metadata{
