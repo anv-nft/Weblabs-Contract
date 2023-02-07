@@ -12,22 +12,22 @@
 <!-- 1 -->
 <g id="node1" class="node">
 <title>1</title>
-<polygon fill="#f2f2f2" stroke="black" points="300.79,-0.5 300.79,-134.1 426.03,-134.1 426.03,-0.5 300.79,-0.5"/>
+<polygon fill="#f2f2f2" stroke="black" points="319.06,-0.5 319.06,-134.1 407.76,-134.1 407.76,-0.5 319.06,-0.5"/>
 <text text-anchor="middle" x="363.41" y="-117.5" font-family="Times,serif" font-size="14.00">&lt;&lt;Enum&gt;&gt;</text>
 <text text-anchor="middle" x="363.41" y="-100.7" font-family="Times,serif" font-size="14.00">status</text>
-<text text-anchor="middle" x="363.41" y="-83.9" font-family="Times,serif" font-size="14.00">contracts/Raffle.sol</text>
-<polyline fill="none" stroke="black" points="300.79,-75.7 426.03,-75.7 "/>
-<text text-anchor="start" x="308.79" y="-59.1" font-family="Times,serif" font-size="14.00">ready: 0</text>
-<text text-anchor="start" x="308.79" y="-42.3" font-family="Times,serif" font-size="14.00">ongoing: 1</text>
-<text text-anchor="start" x="308.79" y="-25.5" font-family="Times,serif" font-size="14.00">completed: 2</text>
-<text text-anchor="start" x="308.79" y="-8.7" font-family="Times,serif" font-size="14.00">canceled: 3</text>
+<text text-anchor="middle" x="363.41" y="-83.9" font-family="Times,serif" font-size="14.00">Raffle.sol</text>
+<polyline fill="none" stroke="black" points="319.06,-75.7 407.76,-75.7 "/>
+<text text-anchor="start" x="327.06" y="-59.1" font-family="Times,serif" font-size="14.00">ready: 0</text>
+<text text-anchor="start" x="327.06" y="-42.3" font-family="Times,serif" font-size="14.00">ongoing: 1</text>
+<text text-anchor="start" x="327.06" y="-25.5" font-family="Times,serif" font-size="14.00">completed: 2</text>
+<text text-anchor="start" x="327.06" y="-8.7" font-family="Times,serif" font-size="14.00">canceled: 3</text>
 </g>
 <!-- 0 -->
 <g id="node5" class="node">
 <title>0</title>
 <polygon fill="#f2f2f2" stroke="black" points="0,-171.1 0,-699.1 726.83,-699.1 726.83,-171.1 0,-171.1"/>
 <text text-anchor="middle" x="363.41" y="-682.5" font-family="Times,serif" font-size="14.00">Raffle</text>
-<text text-anchor="middle" x="363.41" y="-665.7" font-family="Times,serif" font-size="14.00">contracts/Raffle.sol</text>
+<text text-anchor="middle" x="363.41" y="-665.7" font-family="Times,serif" font-size="14.00">Raffle.sol</text>
 <polyline fill="none" stroke="black" points="0,-657.5 726.83,-657.5 "/>
 <text text-anchor="start" x="8" y="-640.9" font-family="Times,serif" font-size="14.00">Public:</text>
 <text text-anchor="start" x="8" y="-624.1" font-family="Times,serif" font-size="14.00"> &#160;&#160;Pool: mapping(address=&gt;RafflePool)</text>
@@ -71,7 +71,7 @@
 <polygon fill="#f2f2f2" stroke="black" points="400.73,-736.1 400.73,-886.5 600.1,-886.5 600.1,-736.1 400.73,-736.1"/>
 <text text-anchor="middle" x="500.41" y="-869.9" font-family="Times,serif" font-size="14.00">&lt;&lt;Struct&gt;&gt;</text>
 <text text-anchor="middle" x="500.41" y="-853.1" font-family="Times,serif" font-size="14.00">RafflePool</text>
-<text text-anchor="middle" x="500.41" y="-836.3" font-family="Times,serif" font-size="14.00">contracts/Raffle.sol</text>
+<text text-anchor="middle" x="500.41" y="-836.3" font-family="Times,serif" font-size="14.00">Raffle.sol</text>
 <polyline fill="none" stroke="black" points="400.73,-828.1 600.1,-828.1 "/>
 <text text-anchor="start" x="408.73" y="-811.5" font-family="Times,serif" font-size="14.00">round: Raffle[]</text>
 <text text-anchor="start" x="408.73" y="-794.7" font-family="Times,serif" font-size="14.00">admin: mapping(address=&gt;bool)</text>
@@ -85,7 +85,7 @@
 <polygon fill="#f2f2f2" stroke="black" points="344.23,-923.5 344.23,-1090.7 536.59,-1090.7 536.59,-923.5 344.23,-923.5"/>
 <text text-anchor="middle" x="440.41" y="-1074.1" font-family="Times,serif" font-size="14.00">&lt;&lt;Struct&gt;&gt;</text>
 <text text-anchor="middle" x="440.41" y="-1057.3" font-family="Times,serif" font-size="14.00">Raffle</text>
-<text text-anchor="middle" x="440.41" y="-1040.5" font-family="Times,serif" font-size="14.00">contracts/Raffle.sol</text>
+<text text-anchor="middle" x="440.41" y="-1040.5" font-family="Times,serif" font-size="14.00">Raffle.sol</text>
 <polyline fill="none" stroke="black" points="344.23,-1032.3 536.59,-1032.3 "/>
 <text text-anchor="start" x="352.23" y="-1015.7" font-family="Times,serif" font-size="14.00">startTime: uint</text>
 <text text-anchor="start" x="352.23" y="-998.9" font-family="Times,serif" font-size="14.00">deadline: uint</text>
@@ -109,8 +109,8 @@
 <!-- 3&#45;&gt;1 -->
 <g id="edge2" class="edge">
 <title>3&#45;&gt;1</title>
-<path fill="none" stroke="black" stroke-dasharray="5,2" d="M536.89,-947.17C561.98,-929.51 587.95,-908.94 609.41,-887 679.6,-815.26 706.14,-795.6 735.41,-699.6 803.99,-474.71 877.93,-357.6 735.41,-170.6 699.34,-123.26 534.09,-92.35 436.39,-77.87"/>
-<polygon fill="black" stroke="black" points="436.68,-74.37 426.28,-76.39 435.67,-81.3 436.68,-74.37"/>
+<path fill="none" stroke="black" stroke-dasharray="5,2" d="M536.89,-947.17C561.98,-929.51 587.95,-908.94 609.41,-887 679.6,-815.26 706.14,-795.6 735.41,-699.6 803.99,-474.71 877.93,-357.6 735.41,-170.6 696.97,-120.15 511.79,-88.35 418.04,-75.23"/>
+<polygon fill="black" stroke="black" points="418.28,-71.73 407.89,-73.83 417.32,-78.66 418.28,-71.73"/>
 </g>
 <!-- 4 -->
 <g id="node4" class="node">
@@ -118,7 +118,7 @@
 <polygon fill="#f2f2f2" stroke="black" points="155.57,-1127.7 155.57,-1294.9 477.26,-1294.9 477.26,-1127.7 155.57,-1127.7"/>
 <text text-anchor="middle" x="316.41" y="-1278.3" font-family="Times,serif" font-size="14.00">&lt;&lt;Struct&gt;&gt;</text>
 <text text-anchor="middle" x="316.41" y="-1261.5" font-family="Times,serif" font-size="14.00">item</text>
-<text text-anchor="middle" x="316.41" y="-1244.7" font-family="Times,serif" font-size="14.00">contracts/Raffle.sol</text>
+<text text-anchor="middle" x="316.41" y="-1244.7" font-family="Times,serif" font-size="14.00">Raffle.sol</text>
 <polyline fill="none" stroke="black" points="155.57,-1236.5 477.26,-1236.5 "/>
 <text text-anchor="start" x="163.57" y="-1219.9" font-family="Times,serif" font-size="14.00">id: uint</text>
 <text text-anchor="start" x="163.57" y="-1203.1" font-family="Times,serif" font-size="14.00">price: uint</text>
