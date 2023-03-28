@@ -17,7 +17,7 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			}
 		],
@@ -36,7 +36,7 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -67,11 +67,11 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			}
 		],
-		"name": "CanceledRound",
+		"name": "CanceledRaffle",
 		"type": "event"
 	},
 	{
@@ -86,11 +86,49 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			}
 		],
-		"name": "CompletedRound",
+		"name": "CompletedRaffle",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "admin",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "productAddr",
+				"type": "address"
+			}
+		],
+		"name": "CreatedShop",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			}
+		],
+		"name": "DestroyedShop",
 		"type": "event"
 	},
 	{
@@ -111,7 +149,7 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -133,7 +171,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "JoinedRound",
+		"name": "JoinedRaffle",
 		"type": "event"
 	},
 	{
@@ -148,7 +186,7 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -162,6 +200,12 @@
 				"internalType": "address",
 				"name": "winner",
 				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "raffleTicket",
+				"type": "uint256"
 			}
 		],
 		"name": "LuckyDrawed",
@@ -223,11 +267,11 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			}
 		],
-		"name": "StartedRound",
+		"name": "StartedRaffle",
 		"type": "event"
 	},
 	{
@@ -242,7 +286,63 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "round",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Withdrawed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "ticketAddr",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "boxIdx",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "startBlock",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "endBlock",
+				"type": "uint256"
+			}
+		],
+		"name": "createdBox",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -256,66 +356,6 @@
 		"type": "event"
 	},
 	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "fungibleToken",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "ticketAddr",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "round",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "stratTime",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "endTime",
-				"type": "uint256"
-			}
-		],
-		"name": "roundCreated",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "fungibleToken",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "ticketAddr",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "round",
-				"type": "uint256"
-			}
-		],
-		"name": "addAvailableNFT",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -324,7 +364,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -352,7 +392,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -380,7 +420,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -408,11 +448,63 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			}
 		],
-		"name": "cancelRound",
+		"name": "cancelRaffle",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "target",
+				"type": "address"
+			}
+		],
+		"name": "checkAdmin",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "admin",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "ticketAddr",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startBlock",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "endBlock",
+				"type": "uint256"
+			}
+		],
+		"name": "createBox",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -430,35 +522,7 @@
 				"type": "address"
 			}
 		],
-		"name": "createPool",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "fungibleToken",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "ticketAddr",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "stratTime",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "endTime",
-				"type": "uint256"
-			}
-		],
-		"name": "createRound",
+		"name": "createShop",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -471,7 +535,7 @@
 				"type": "address"
 			}
 		],
-		"name": "destroyPool",
+		"name": "destroyShop",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -508,7 +572,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -518,35 +582,6 @@
 			}
 		],
 		"name": "draw",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "luckyDrawedNumber",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "winner",
-				"type": "address"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "fungibleToken",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "round",
-				"type": "uint256"
-			}
-		],
-		"name": "endRound",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -560,11 +595,29 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			}
 		],
-		"name": "forceEndRound",
+		"name": "endRaffle",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "boxIdx",
+				"type": "uint256"
+			}
+		],
+		"name": "forceEndRaffle",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -577,11 +630,11 @@
 				"type": "address"
 			}
 		],
-		"name": "getCurrentRound",
+		"name": "getCurrentBox",
 		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "currentBox",
 				"type": "uint256"
 			}
 		],
@@ -597,7 +650,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -610,52 +663,23 @@
 		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "tokenIdOfProduct",
 				"type": "uint256"
 			},
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "price",
 				"type": "uint256"
 			},
 			{
-				"internalType": "address[]",
-				"name": "",
-				"type": "address[]"
+				"internalType": "uint256[]",
+				"name": "entry",
+				"type": "uint256[]"
 			},
 			{
 				"internalType": "address",
-				"name": "",
+				"name": "winner",
 				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "fungibleToken",
-				"type": "address"
-			}
-		],
-		"name": "getPool",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			},
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -670,7 +694,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -688,7 +712,36 @@
 		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "refundingAmount",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			}
+		],
+		"name": "getShop",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "admin",
+				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "productAddr",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "currentBox",
 				"type": "uint256"
 			}
 		],
@@ -704,7 +757,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -723,7 +776,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "joinRound",
+		"name": "joinRaffle",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -750,7 +803,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -778,7 +831,7 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			},
 			{
@@ -837,11 +890,11 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
 			}
 		],
-		"name": "startRound",
+		"name": "startRaffle",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -868,13 +921,8 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "round",
+				"name": "boxIdx",
 				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "addrOfNFT",
-				"type": "address"
 			},
 			{
 				"internalType": "uint256",
@@ -886,11 +934,87 @@
 		"outputs": [
 			{
 				"internalType": "bool",
-				"name": "",
+				"name": "used",
 				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "boxIdx",
+				"type": "uint256"
+			}
+		],
+		"name": "viewBox",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "startBlock",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "endBlock",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum RaffleShop.Status",
+				"name": "status",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "boxIdx",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "itemIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "viewRaffle",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "ticketAmount",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "fungibleToken",
+				"type": "address"
+			}
+		],
+		"name": "withdraw",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]

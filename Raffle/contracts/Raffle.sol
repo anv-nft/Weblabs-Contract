@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ERC721_ANVPausable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract RaffleShop is Ownable {
     enum Status {
@@ -16,32 +15,33 @@ contract RaffleShop is Ownable {
         canceled
     }
 
-    // fungibleToken => Shop
-    mapping(address => Shop) Raffle;
+    // fungibleToken => shop
+    mapping(address => Shop) shop;
 
     struct Shop {
         Box[] boxes;
         mapping(address => bool) admin;
-        uint256 currentRound;
+        uint256 currentBox;
         address productAddr;
         bool destroyed;
     }
 
     struct Box {
-        uint256 startTime;
+        uint256 startBlock;
         uint256 deadline;
         Status status;
         product[] products;
-        mapping(address => bool) availableNFT;
-        mapping(address => mapping(uint256 => bool)) usedTicket;
+        address availableNFT;
+        mapping(uint256 => bool) usedTicket;
     }
 
     struct product {
         uint256 tokenId;
         uint256 price;
-        address[] entry;
+        uint256[] entry;
         address winner;
         mapping(address => uint256) countForRefunding;
+        mapping(uint256 => address) originOwner;
     }
 
     /**
@@ -49,42 +49,50 @@ contract RaffleShop is Ownable {
      * @param fungibleToken the fungibleToken address
      */
 
-    function createPool(address fungibleToken, address productAddr)
+    function createShop(address fungibleToken, address productAddr)
         public
         onlyOwner
     {
         require(
-            Raffle[fungibleToken].admin[msg.sender] == false,
-            "Error : Already created Raffle"
+            shop[fungibleToken].admin[msg.sender] == false,
+            "Error : Already created shop"
         );
-        Raffle[fungibleToken].admin[msg.sender] = true;
-        Raffle[fungibleToken].productAddr = productAddr;
-        Raffle[fungibleToken].destroyed = false;
+        shop[fungibleToken].admin[msg.sender] = true;
+        shop[fungibleToken].productAddr = productAddr;
+        shop[fungibleToken].destroyed = false;
+
+        emit CreatedShop(fungibleToken, msg.sender, productAddr);
     }
 
-    function getPool(address fungibleToken)
+    event CreatedShop(address fungibleToken, address admin, address productAddr);
+
+    function getShop(address fungibleToken)
         public
         view
         returns (
-            bool,
-            address,
-            uint256
+            bool admin,
+            address productAddr,
+            uint256 currentBox
         )
     {
         return (
-            Raffle[fungibleToken].admin[msg.sender],
-            Raffle[fungibleToken].productAddr,
-            Raffle[fungibleToken].currentRound
+            shop[fungibleToken].admin[msg.sender],
+            shop[fungibleToken].productAddr,
+            shop[fungibleToken].currentBox
         );
     }
 
-    function destroyPool(address fungibleToken) public onlyOwner {
-        Raffle[fungibleToken].destroyed = true;
+    function destroyShop(address fungibleToken) public onlyOwner {
+        shop[fungibleToken].destroyed = true;
+
+        emit DestroyedShop(fungibleToken);
     }
+
+    event DestroyedShop(address fungibleToken);
 
     modifier onlyAdmin(address fungibleToken) {
         require(
-            Raffle[fungibleToken].admin[msg.sender],
+            shop[fungibleToken].admin[msg.sender],
             "OwnershipError : You are not admin"
         );
         _;
@@ -101,169 +109,196 @@ contract RaffleShop is Ownable {
         address admin,
         bool status
     ) public onlyAdmin(fungibleToken) {
-        Raffle[fungibleToken].admin[admin] = status;
+        shop[fungibleToken].admin[admin] = status;
         emit SettedAdmin(fungibleToken, admin, status);
     }
 
     event SettedAdmin(address fungibleToken, address admin, bool status);
 
+    function checkAdmin(address fungibleToken, address target)
+        public
+        view
+        returns (bool admin)
+    {
+        return shop[fungibleToken].admin[target];
+    }
+
     /**
      * @dev make a raffle
      * @param fungibleToken the fungibleToken address
      * @param ticketAddr the NFT address
-     * @param stratTime the start time of raffle
-     * @param endTime the end time of raffle
+     * @param startBlock the start Block of raffle
+     * @param endBlock the end Block of raffle
      */
-    function createRound(
+    function createBox(
         address fungibleToken,
         address ticketAddr,
-        uint256 stratTime,
-        uint256 endTime
-    ) public onlyAdmin(fungibleToken) {
-        Raffle[fungibleToken].boxes.push();
-        Box storage box = Raffle[fungibleToken].boxes[
-            Raffle[fungibleToken].currentRound
+        uint256 startBlock,
+        uint256 endBlock
+    ) public onlyAdmin(fungibleToken) 
+    {
+        shop[fungibleToken].boxes.push();
+        Box storage box = shop[fungibleToken].boxes[
+            shop[fungibleToken].currentBox
         ];
 
         require(
-            Raffle[fungibleToken].destroyed == false,
-            "StatusError : Raffle was deleted"
+            shop[fungibleToken].destroyed == false,
+            "StatusError : shop was deleted"
         );
 
-        box.availableNFT[ticketAddr] = true;
-        box.startTime = stratTime;
-        box.deadline = endTime;
+        box.availableNFT = ticketAddr;
+        box.startBlock = startBlock;
+        box.deadline = endBlock;
         box.status = Status.ready;
 
-        Raffle[fungibleToken].currentRound++;
-        emit roundCreated(fungibleToken, ticketAddr, 1, stratTime, endTime);
+        shop[fungibleToken].currentBox++;
+
+        emit createdBox(fungibleToken, ticketAddr, shop[fungibleToken].currentBox-1, startBlock, endBlock);
     }
 
-    // function getRound(address fungibleToken, uint round) public view returns(uint, uint, Status, address[] memory, product[] memory){
-    //     Box storage box = Raffle[fungibleToken].boxes[round];
-    //     return (box.startTime, box.deadline, box.status, box.availableNFTs, box.products);
-    // }
-
-    function getCurrentRound(address fungibleToken)
-        public
-        view
-        returns (uint256)
-    {
-        return Raffle[fungibleToken].currentRound;
-    }
-
-    event roundCreated(
+    event createdBox(
         address fungibleToken,
         address ticketAddr,
-        uint256 round,
-        uint256 stratTime,
-        uint256 endTime
+        uint256 boxIdx,
+        uint256 startBlock,
+        uint256 endBlock
     );
+
+    function viewBox(address fungibleToken, uint256 boxIdx)
+        public
+        view
+        returns (
+            uint256 startBlock,
+            uint256 endBlock,
+            Status status
+        )
+    {
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
+        return (box.startBlock, box.deadline, box.status);
+    }
+
+    // function getRaffle(address fungibleToken, uint boxIdx) public view returns(uint, uint, Status, address[] memory, product[] memory){
+    //     Box storage box = shop[fungibleToken].boxes[boxIdx];
+    //     return (box.startBlock, box.deadline, box.status, box.availableNFTs, box.products);
+    // }
+    
+
+    function getCurrentBox(address fungibleToken)
+        public
+        view
+        returns (uint256 currentBox)
+    {
+        return shop[fungibleToken].currentBox;
+    }
+
 
     /**
      * @dev add a available NFT to a raffle only admin
      * @param fungibleToken the fungibleToken address
      * @param ticketAddr the NFT address
-     * @param round the round of raffle
+     * @param boxIdx the boxIdx of raffle
      */
-    function addAvailableNFT(
-        address fungibleToken,
-        address ticketAddr,
-        uint256 round
-    ) public onlyAdmin(fungibleToken) {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+    // function addAvailableNFT(
+    //     address fungibleToken,
+    //     address ticketAddr,
+    //     uint256 boxIdx
+    // ) public onlyAdmin(fungibleToken) {
+    //     Box storage box = shop[fungibleToken].boxes[boxIdx];
 
-        require(
-            box.status == Status.ready,
-            "StatusError : Status is not ready"
-        );
-        box.availableNFT[ticketAddr] = true;
+    //     require(
+    //         box.status == Status.ready,
+    //         "StatusError : Status is not ready"
+    //     );
+    //     box.availableNFT[ticketAddr] = true;
 
-        emit AddedAvailableNFT(fungibleToken, ticketAddr, round);
-    }
+    //     emit AddedAvailableNFT(fungibleToken, ticketAddr, boxIdx);
+    // }
 
     event AddedAvailableNFT(
         address fungibleToken,
         address ticketAddr,
-        uint256 round
+        uint256 boxIdx
     );
 
     /**
      * @dev add a product to a raffle only admin
      * @param fungibleToken the fungibleToken address
-     * @param round the round of raffle
+     * @param boxIdx the boxIdx of raffle
      * @param price the price of NFT
      */
 
-    function addItem(
+    function makeItem(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 price,
-        string memory tokenURI
-    ) public onlyAdmin(fungibleToken) {
-        ANVRaffleNFT productInstance = ANVRaffleNFT(Raffle[fungibleToken].productAddr);
-        Box storage box = Raffle[fungibleToken].boxes[round];
-
-        require(box.status == Status.ready, "StatusError: Status is not ready");
+        string memory tokenURI,
+        Box storage box
+    ) internal {
+        address productAddress = shop[fungibleToken].productAddr;
 
         uint256 len = box.products.length;
         box.products.push();
-        box.products[len].tokenId = productInstance.getTokenAmount();
+        box.products[len].tokenId = ANVRaffleNFT(productAddress).totalSupply();
         box.products[len].price = price;
 
-        productInstance.mintWithTokenURI(address(this), tokenURI);
+        ANVRaffleNFT(productAddress).mintWithTokenURI(address(this), tokenURI);
 
-        emit AddedItem(fungibleToken, round, box.products[len].tokenId, price);
+        emit AddedItem(fungibleToken, boxIdx, box.products[len].tokenId, price);
+    }
+
+    function addItem(
+        address fungibleToken,
+        uint256 boxIdx,
+        uint256 price,
+        string memory tokenURI
+    ) public onlyAdmin(fungibleToken) 
+    {
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
+
+        require(box.status == Status.ready, "StatusError: Status is not ready");
+
+        makeItem(fungibleToken, boxIdx, price, tokenURI, box);
     }
 
     event AddedItem(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 NFTId,
         uint256 price
     );
 
     function batchAddItem(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256[] memory price,
         string[] memory tokenURI
     ) public onlyAdmin(fungibleToken) {
         uint256 priceLength = price.length;
-        ANVRaffleNFT productInstance = ANVRaffleNFT(Raffle[fungibleToken].productAddr);
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
 
         require(box.status == Status.ready, "StatusError: Status is not ready");
 
         for (uint256 i = 0; i < priceLength; i++) {
-
-            uint256 len = box.products.length;
-            box.products.push();
-            box.products[len].tokenId = productInstance.getTokenAmount();
-            box.products[len].price = price[i];
-
-            productInstance.mintWithTokenURI(address(this), tokenURI[i]);
-
-            emit AddedItem(fungibleToken, round, box.products[len].tokenId, price[i]);
+            makeItem(fungibleToken, boxIdx, price[i], tokenURI[i], box);
         }
     }
 
-
     function getItem(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 itemIdx
     )
         public
         view
         returns (
-            uint256,
-            uint256,
-            address[] memory,
-            address
+            uint256 tokenIdOfProduct,
+            uint256 price,
+            uint256[] memory entry,
+            address winner
         )
     {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         return (
             box.products[itemIdx].tokenId,
             box.products[itemIdx].price,
@@ -272,24 +307,24 @@ contract RaffleShop is Ownable {
         );
     }
 
-    // function getItems(address fungibleToken, uint round) public view returns(product[] memory){
-    //     Box storage box = Raffle[fungibleToken].boxes[round];
+    // function getItems(address fungibleToken, uint boxIdx) public view returns(product[] memory){
+    //     Box storage box = shop[fungibleToken].boxes[boxIdx];
     //     return box.products;
     // }
 
     /**
      * @dev remove a product from a raffle only admin
      * @param fungibleToken the fungibleToken address
-     * @param round the round of raffle
-     * @param itemIdx the Index of the product at this round
+     * @param boxIdx the boxIdx of raffle
+     * @param itemIdx the Index of the product at this boxIdx
      */
 
     function removeItem(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 itemIdx
     ) public onlyAdmin(fungibleToken) returns (bool) {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         require(
             box.status == Status.ready,
             "StatusError : Status is not ready"
@@ -297,91 +332,104 @@ contract RaffleShop is Ownable {
         uint256 NFTId = box.products[itemIdx].tokenId;
         delete box.products[NFTId];
 
-        ANVRaffleNFT(Raffle[fungibleToken].productAddr).burn(NFTId);
+        ANVRaffleNFT(shop[fungibleToken].productAddr).burn(NFTId);
 
-        emit removedItem(fungibleToken, round, NFTId);
+        emit removedItem(fungibleToken, boxIdx, NFTId);
 
         return true;
     }
 
-    event removedItem(address fungibleToken, uint256 round, uint256 NFTId);
+    event removedItem(address fungibleToken, uint256 boxIdx, uint256 NFTId);
 
     /**
      * @dev join to raffle
      * @param fungibleToken the fungibleToken address
-     * @param round the round of raffle
+     * @param boxIdx the boxIdx of raffle
      * @param selectedItem the selected product
      * @param addrOfNFT the NFT address
      * @param userNFT the NFT tokenId
      */
 
-    function joinRound(
+    function joinRaffle(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 selectedItem,
         address addrOfNFT,
         uint256 userNFT
     ) public {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         product storage selectedProduct = box.products[selectedItem];
         require(
             box.status == Status.ongoing,
-            "StatusError : Status is not ongoing"
+            "StatusError : The status is not ongoing"
         );
-
         require(
-            box.availableNFT[addrOfNFT] == true,
-            "StatusError : This NFT isn't ticket"
+            block.number > box.startBlock && block.number < box.deadline,
+            "TimeError : The deadline is over"
+        );
+        require(
+            box.availableNFT == addrOfNFT,
+            "StatusError : This NFT isn't being used as a ticket"
         );
         require(
             IERC721(addrOfNFT).ownerOf(userNFT) == msg.sender,
-            "OwnerError : You don't have this NFT"
+            "OwnerError : You don't own this NFT"
         );
         require(
-            box.usedTicket[addrOfNFT][userNFT] == false,
-            "StatusError : This NFT was used"
+            box.usedTicket[userNFT] == false,
+            "StatusError : This NFT has been used"
         );
-        box.usedTicket[addrOfNFT][userNFT] = true;
+        box.usedTicket[userNFT] = true;
 
         uint256 price = selectedProduct.price;
         require(
-            IERC20(fungibleToken).balanceOf(msg.sender) >=
-                price,
-            "BalanceError : You don't have enough token for pay"
+            IERC20(fungibleToken).balanceOf(msg.sender) >= price,
+            "BalanceError : You don't have enough tokens for pay"
         );
-        IERC20(fungibleToken).transferFrom(
-            msg.sender,
-            address(this),
-            price
-        );
-
-        selectedProduct.entry.push(msg.sender);
+        selectedProduct.entry.push(userNFT);
+        // if mode == 0:
+        IERC20(fungibleToken).transferFrom(msg.sender, address(this), price);
         selectedProduct.countForRefunding[msg.sender]++;
+        selectedProduct.originOwner[userNFT] = msg.sender;
 
-        emit JoinedRound(
+        // else:
+            // if selectedProduct.countForRefunding[msg.sender] == 0:
+                // IERC20(fungibleToken).transferFrom(msg.sender, address(this), price);
+                // selectedProduct.countForRefunding[msg.sender]++;
+
+
+        emit JoinedRaffle(
             msg.sender,
             fungibleToken,
-            round,
+            boxIdx,
             selectedItem,
             addrOfNFT,
             userNFT
         );
     }
 
-    function usedTicket(
+    function viewRaffle(
         address fungibleToken,
-        uint256 round,
-        address addrOfNFT,
-        uint256 tokenId
-    ) public view returns (bool) {
-        return
-            Raffle[fungibleToken].boxes[round].usedTicket[addrOfNFT][tokenId];
+        uint256 boxIdx,
+        uint256 itemIndex
+    ) public view returns (uint256 ticketAmount) {
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
+        product storage selectedProduct = box.products[itemIndex];
+        return selectedProduct.entry.length;
     }
 
-    event JoinedRound(
+    function usedTicket(
+        address fungibleToken,
+        uint256 boxIdx,
+        uint256 tokenId
+    ) public view returns (bool used) {
+        return shop[fungibleToken].boxes[boxIdx].usedTicket[tokenId];
+    }
+
+    event JoinedRaffle(
         address joiner,
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 selectedItem,
         address addrOfNFT,
         uint256 userNFT
@@ -390,147 +438,145 @@ contract RaffleShop is Ownable {
     /**
      * @dev end a raffle
      * @param fungibleToken the fungibleToken address
-     * @param round the round of raffle
+     * @param boxIdx the boxIdx of raffle
      */
 
-    function endRound(address fungibleToken, uint256 round)
+    function endRaffle(address fungibleToken, uint256 boxIdx)
         public
         onlyAdmin(fungibleToken)
     {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         require(
             box.status == Status.ongoing,
             "StatusError : Status is not ongoing"
         );
         require(
             block.number >= box.deadline,
-            "TimeError : Shop is not completed"
+            "BlockError : shop is not completed"
         );
         box.status = Status.completed;
 
-        emit CompletedRound(fungibleToken, round);
+        emit CompletedRaffle(fungibleToken, boxIdx);
     }
 
-    function forceEndRound(address fungibleToken, uint256 round)
+    function forceEndRaffle(address fungibleToken, uint256 boxIdx)
         public
         onlyAdmin(fungibleToken)
     {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         require(
             box.status == Status.ongoing,
             "StatusError : Status is not ongoing"
         );
         box.status = Status.completed;
 
-        emit CompletedRound(fungibleToken, round);
+        emit CompletedRaffle(fungibleToken, boxIdx);
     }
 
-    event CompletedRound(address fungibleToken, uint256 round);
+    event CompletedRaffle(address fungibleToken, uint256 boxIdx);
 
-    function cancelRound(address fungibleToken, uint256 round)
+    function cancelRaffle(address fungibleToken, uint256 boxIdx)
         public
         onlyAdmin(fungibleToken)
     {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         require(
-            box.status == Status.ready,
+            box.status == Status.ready || box.status == Status.ongoing,
             "StatusError : Status is not ready"
         );
 
         box.status = Status.canceled;
 
-        emit CanceledRound(fungibleToken, round);
+        emit CanceledRaffle(fungibleToken, boxIdx);
     }
 
-    event CanceledRound(address fungibleToken, uint256 round);
+    event CanceledRaffle(address fungibleToken, uint256 boxIdx);
 
-    function startRound(address fungibleToken, uint256 round)
+    function startRaffle(address fungibleToken, uint256 boxIdx)
         public
         onlyAdmin(fungibleToken)
     {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         require(
             box.status == Status.ready,
-            "StatusError : Shop is not available"
+            "StatusError : shop is not available"
         );
         box.status = Status.ongoing;
-        require(
-            block.number >= box.startTime,
-            "TimeError : Shop is completed"
-        );
+        require(block.number >= box.startBlock, "BlockError : shop is completed");
 
-        emit StartedRound(fungibleToken, round);
+        emit StartedRaffle(fungibleToken, boxIdx);
     }
 
-    event StartedRound(address fungibleToken, uint256 round);
+    event StartedRaffle(address fungibleToken, uint256 boxIdx);
 
     /**
      * @dev lucky draw
-     * @param fungibleToken the fungibleToken address
-
-     * @param round the round of raffle
-     * @param itemNumber the product number
+     * @param entryLength the length of entry
      */
 
     function luckyDraw(
-        address fungibleToken,
-        uint256 round,
-        uint256 itemNumber
+        uint256 entryLength
     ) internal view returns (uint256) {
-        Box storage box = Raffle[fungibleToken].boxes[round];
         return
             uint256(
                 keccak256(
                     abi.encodePacked(
                         block.difficulty,
                         block.timestamp,
-                        box.products[itemNumber].entry.length
+                        entryLength
                     )
                 )
-            ) % box.products[itemNumber].entry.length;
+            ) % entryLength;
     }
 
     function draw(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 itemNumber
     )
         public
         onlyAdmin(fungibleToken)
-        returns (uint256 luckyDrawedNumber, address winner)
     {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         product storage _product = box.products[itemNumber];
         require(
             box.status == Status.completed,
             "StatusError : Status is not completed"
         );
 
-        uint256 drawedNumber = luckyDraw(fungibleToken, round, itemNumber);
-        address _winner = _product.entry[drawedNumber];
+        uint256 drawedNumber = luckyDraw(_product.entry.length);
+        uint256 raffleTicket = _product.entry[drawedNumber];
+        address _winner = IERC721(box.availableNFT).ownerOf(
+            raffleTicket
+        );
 
         require(
             _product.winner == address(0),
             "StatusError : Already drawed product"
         );
         _product.winner = _winner;
-        _product.countForRefunding[_winner]--;
+        _product.countForRefunding[_product.originOwner[raffleTicket]]--;
 
-        ANVRaffleNFT(Raffle[fungibleToken].productAddr).transferFrom(
+
+        ANVRaffleNFT item = ANVRaffleNFT(shop[fungibleToken].productAddr);
+        item.transferFrom(  
             address(this),
             _winner,
             _product.tokenId
         );
+        item.pause(
+            _product.tokenId
+        );
 
-        emit LuckyDrawed(fungibleToken, round, itemNumber, winner);
-        return (drawedNumber, winner);
+        emit LuckyDrawed(fungibleToken, boxIdx, itemNumber, _winner, raffleTicket);
     }
 
     event LuckyDrawed(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 itemNumber,
-        address winner
+        address winner,
+        uint256 raffleTicket
     );
 
     function discard(
@@ -538,7 +584,9 @@ contract RaffleShop is Ownable {
         uint256 tokenId,
         uint256 price
     ) public onlyAdmin(fungibleToken) {
-        ANVRaffleNFT productInstance = ANVRaffleNFT(Raffle[fungibleToken].productAddr);
+        ANVRaffleNFT productInstance = ANVRaffleNFT(
+            shop[fungibleToken].productAddr
+        );
 
         require(
             productInstance.isDiscarded(tokenId) == false,
@@ -546,19 +594,16 @@ contract RaffleShop is Ownable {
         );
         productInstance.discard(tokenId);
 
-        IERC20(fungibleToken).transfer(
-            productInstance.ownerOf(tokenId),
-            price
-        );
+        IERC20(fungibleToken).transfer(productInstance.ownerOf(tokenId), price);
     }
 
     function refund(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 itemNumber,
         address user
     ) public {
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         product storage _product = box.products[itemNumber];
         require(
             box.status == Status.completed || box.status == Status.canceled,
@@ -572,37 +617,43 @@ contract RaffleShop is Ownable {
             user,
             _product.price * countForRefunding
         );
-        
     }
 
     function getRefundingAmount(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 itemNumber,
         address user
-    ) public view returns (uint256) {
-        product storage _product = Raffle[fungibleToken].boxes[round].products[
+    ) public view returns (uint256 refundingAmount) {
+        product storage _product = shop[fungibleToken].boxes[boxIdx].products[
             itemNumber
         ];
         return _product.countForRefunding[user] * _product.price;
     }
+    function withdraw(address fungibleToken) public onlyAdmin(fungibleToken){
+        uint256 amount = IERC20(fungibleToken).balanceOf(address(this));
+        IERC20(fungibleToken).transfer(msg.sender, amount);
+        
+        emit Withdrawed(fungibleToken, amount);
+    }
+
+    event Withdrawed(address fungibleToken, uint256 amount);
 
     function batchRefund(
         address fungibleToken,
-        uint256 round,
+        uint256 boxIdx,
         uint256 itemNumber,
         address[] calldata user
     ) public {
         uint256 userLength = user.length;
-        Box storage box = Raffle[fungibleToken].boxes[round];
+        Box storage box = shop[fungibleToken].boxes[boxIdx];
         product storage _product = box.products[itemNumber];
         require(
             box.status == Status.completed || box.status == Status.canceled,
             "StatusError : Status is not for refunding"
         );
-        
-        for (uint256 i = 0; i < userLength; i++) {
 
+        for (uint256 i = 0; i < userLength; i++) {
             uint256 countForRefunding = _product.countForRefunding[user[i]];
             _product.countForRefunding[user[i]] = 0;
 
